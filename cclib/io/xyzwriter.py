@@ -81,6 +81,18 @@ class XYZ(filewriter.Writer):
 
         return "\n".join(xyzblock)
 
+    def _comment(self, index: int) -> str:
+        """The comment parsed for the geometry at the given index, if any.
+
+        The XYZ reader stores one comment per geometry, but the Gaussian parser
+        stores one per job (its title section), whatever the number of geometries
+        of the job. Without one comment per geometry, the last comment is used.
+        """
+        comments = self.ccdata.metadata.get("comments", [])
+        if len(comments) == len(self.ccdata.atomcoords):
+            return comments[index]
+        return comments[-1] if comments else ""
+
     def _xyz_from_ccdata(self, index: int) -> str:
         """Create an XYZ file of the geometry at the given index."""
 
@@ -89,11 +101,7 @@ class XYZ(filewriter.Writer):
             raise ValueError("_xyz_from_ccdata: can't use wrap around index")
 
         atomcoords = self.ccdata.atomcoords[index]
-        existing_comment = (
-            ""
-            if "comments" not in self.ccdata.metadata
-            else self.ccdata.metadata["comments"][index]
-        )
+        existing_comment = self._comment(index)
 
         geometry_num = index + 1
         # Create a comment derived from the filename and the index.

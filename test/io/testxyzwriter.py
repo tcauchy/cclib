@@ -28,6 +28,22 @@ class XYZWriterTest:
         # The object should keep the ccData instance passed to its constructor.
         assert xyz.ccdata == data
 
+    def test_gaussian_optimization(self) -> None:
+        """Can the geometries of a Gaussian optimization be written?
+
+        Gaussian gives one comment per job, not one per geometry.
+        """
+        fpath = os.path.join(__datadir__, "data/Gaussian/basicGaussian16/dvb_gopt.out")
+        data = cclib.io.ccread(fpath)
+        ngeoms = len(data.atomcoords)
+        assert ngeoms > len(data.metadata["comments"])
+
+        last = cclib.io.xyzwriter.XYZ(data).generate_repr().splitlines()
+        assert last[1] == f"{data.metadata['comments'][-1]} [Geometry {ngeoms}]"
+
+        allgeom = cclib.io.xyzwriter.XYZ(data, allgeom=True).generate_repr()
+        assert allgeom.count("[Geometry ") == ngeoms
+
     def test_roundtrip_1(self) -> None:
         """Does a written XYZ file with a single structure match a reference
         output?
